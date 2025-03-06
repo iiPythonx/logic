@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     def run(expression: str):
         variables = {
-            v: {"true": True, "t": True, "false": False, "f": False}[input(f"  -> \033[36m{v}: \033[90m").lower()]
+            v: {"t": True, "f": False}[input(f"  -> \033[36m{v}: \033[90m").lower()[0]]
             for v in sorted(set([c for c in expression if c in string.ascii_letters]))
         }
 
