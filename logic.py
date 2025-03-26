@@ -1,5 +1,5 @@
 # Copyright (c) 2025 Benjamin O'Brien
-# Version 3.1
+# Version 3.2
 
 # Modules
 import re
