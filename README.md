@@ -17,7 +17,7 @@ Alternatively, run `python3 logic.py` with no arguments for an interactive sessi
     - Material conditional ("⊃", "→", "⇒")
     - Material biconditional ("≡", "↔", "⇔")
     - Negation ("~")
-    - Logical conjunction ("⦁", "∧", "^", "&")
+    - Logical conjunction ("⦁", "•", "∧", "^", "&")
     - Logical inclusive disjunction ("∨", "v", "+", "∥")
 
 - Basic structuring/organization
@@ -30,5 +30,5 @@ Alternatively, run `python3 logic.py` with no arguments for an interactive sessi
     - And nearly any other valid equation, as defined by the above prerequisites
 
 - Supports truth tables
-    - Supports brute force calculating all possible values for a given equation
+    - ~~Supports brute force calculating all possible values for a given equation~~ (soon)
     - Supports calculating [Equivalent](https://en.wikipedia.org/wiki/Logical_equivalence)/[Contradictory](https://en.wikipedia.org/wiki/Contradiction)/[Consistent](https://en.wikipedia.org/wiki/Consistency#First-order_logic)/[Inconsistent](https://en.wikipedia.org/wiki/Consistency#First-order_logic)

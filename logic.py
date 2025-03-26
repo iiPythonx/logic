@@ -8,7 +8,7 @@ import operator
 # Initialization
 OPERATORS = {}
 for symbols, data in {
-    ("⦁", "∧", "^", "&"): {
+    ("⦁", "•", "∧", "^", "&"): {
         "name": "AND",
         "comparison": operator.and_
     },
@@ -39,9 +39,10 @@ class UnknownOperator(Exception):
 def trim(expression: str) -> str:
     return expression[1:][:-1] if expression[0] in GROUPINGS.keys() else expression
 
-def evaluate(expression: str, variables: dict[str, bool], index: int = 0) -> bool:
+def evaluate(expression: str, variables: dict[str, bool], index: int = 0, enable_logging: bool = True) -> bool:
     def log(text: str, indent: int = 0) -> None:
-        print(f"\033[90m{'\t' * (indent + index)}{text}\033[0m")
+        if enable_logging:
+            print(f"\033[90m{'\t' * (indent + index)}{text}\033[0m")
 
     # Take expression, and find the top level assets
     depth, segments, buffer = 0, [], ""
@@ -79,7 +80,7 @@ def evaluate(expression: str, variables: dict[str, bool], index: int = 0) -> boo
     # Process chains
     if len(segments) > 1:
         left, operator, right = segments
-        left_value, right_value = evaluate(trim(left), variables, index + 1), evaluate(trim(right), variables, index + 1)
+        left_value, right_value = evaluate(trim(left), variables, index + 1, enable_logging), evaluate(trim(right), variables, index + 1, enable_logging)
         log(f"Segments --> {' '.join(segments)}", 1)
         log(f"Method --> {OPERATORS[operator]['name']}", 2)
 
@@ -99,7 +100,7 @@ def evaluate(expression: str, variables: dict[str, bool], index: int = 0) -> boo
         if value is None:
 
             # If it isn't one, assume it's another chain
-            value = evaluate(trim(sanitized), variables, index + 1)
+            value = evaluate(trim(sanitized), variables, index + 1, enable_logging)
 
         # Negate the value as many times as needed
         for _ in range(len(segments[0]) - len(segments[0].lstrip("~"))):
@@ -132,8 +133,53 @@ if __name__ == "__main__":
         print(f"\n\033[36mThe end value is \033[3{2 if result else 1}m{result}.\033[36m")
         print(f"\033[90m  -> Took {round((time.time() - start_time) * 1000)}ms total to calculate.")
 
-    if len(sys.argv) > 1:
-        run(sys.argv[1])
+    options = [arg for arg in sys.argv[1:] if arg[:2] == "--"]
+    expressions = [arg for arg in sys.argv[1:] if arg[:2] != "--"]
+
+    if expressions:
+        if "--compare" in options:
+            variables = []
+            for expression in expressions:
+                variables += [c for c in expression if c in string.ascii_letters]
+
+            results = []
+            def loopback(variables: list[str], values: dict[str, bool] = {}) -> None:
+                current_variable = variables[0]
+                for value in [True, False]:
+                    if variables[1:]:
+                        loopback(variables[1:], values | {current_variable: value})
+
+                    else:
+                        results.append([
+                            evaluate(
+                                expression,
+                                variables = values | {current_variable: value},
+                                enable_logging = False
+                            )
+                            for expression in expressions
+                        ])
+
+            loopback(sorted(set(variables)))
+            print("\033[36mGiven the following equations:")
+            for expression in expressions:
+                print(f"\033[90m  -> {expression}")
+
+            equivalent = all([x == y for x, y in results])
+            consistent = any([x and y for x, y in results])
+            contradictory = inconsistent = all([x != y for x, y in results])
+            inconsistent = not consistent
+
+            formatted_results = "\033[32mequivalent\033[36m" if equivalent else "\033[31mcontradictory\033[36m" if contradictory else ""
+            if consistent or inconsistent:
+                if formatted_results:
+                    formatted_results += " and "
+
+                formatted_results += "\033[32mconsistent\033[36m" if consistent else "\033[31minconsistent\033[36m" if inconsistent else ""
+
+            print(f"\n\033[36mTheir relationship is {formatted_results}.")
+            exit()
+
+        [run(expression) for expression in expressions]
         exit()
 
     while True:
