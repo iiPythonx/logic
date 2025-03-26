@@ -2,11 +2,13 @@
 
 A logic symbol processor for PHI-1113.
 
-### Usage
+## Usage
 
 Example usage:
 ```sh
 python3 logic.py "(X ⊃ Z) ⊃ [(B ≡ ~X) ⦁ ~(C ∨ ~A)]"
+python3 logic.py "~(~B v B)" "(A ⊃ B) ⦁ (A ⦁ ~B)" --compare
+python3 logic.py "~(A v ~B) / ~A v B // A ≡ B" --validity
 ```
 
 Alternatively, run `python3 logic.py` with no arguments for an interactive session.
@@ -30,5 +32,6 @@ Alternatively, run `python3 logic.py` with no arguments for an interactive sessi
     - And nearly any other valid equation, as defined by the above prerequisites
 
 - Supports truth tables
+    - Supports calculating if an expression is valid or invalid
     - ~~Supports brute force calculating all possible values for a given equation~~ (soon)
     - Supports calculating [Equivalent](https://en.wikipedia.org/wiki/Logical_equivalence)/[Contradictory](https://en.wikipedia.org/wiki/Contradiction)/[Consistent](https://en.wikipedia.org/wiki/Consistency#First-order_logic)/[Inconsistent](https://en.wikipedia.org/wiki/Consistency#First-order_logic)
