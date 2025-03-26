@@ -47,6 +47,7 @@ class RelationshipResult:
     equivalent:    bool
     consistent:    bool
     contradictory: bool
+    inconsistent:  bool
 
 # Exceptions
 class UnknownOperator(Exception):
@@ -164,6 +165,7 @@ class Logic:
                     all([x == y for x, y in values]),
                     consistent,
                     all([x != y for x, y in values]),
+                    not consistent
                 )
 
             case ComparisonMode.VALIDITY:
@@ -210,11 +212,8 @@ if __name__ == "__main__":
             for expression in expressions:
                 print(f"\033[90m  -> {expression}")
 
-            formatted_results = "\033[32mequivalent\033[36m" if result.equivalent else "\033[31mcontradictory\033[36m" if result.contradictory else ""
-            if formatted_results:
-                formatted_results += " and "
-
-            print(f"\n\033[36mTheir relationship is {formatted_results}{'\033[32mconsistent\033[36m' if result.consistent else '\033[31minconsistent\033[36m'}.")
+            data = [f"\033[3{1 if 'in' in v or 'ory' in v else 2}m{v}\033[36m" for v in dir(result) if v[0] != "_" and getattr(result, v)]
+            print(f"\n\033[36mTheir relationship is {' and '.join(data)}.")
             exit()
 
         if "--validity" in options:
