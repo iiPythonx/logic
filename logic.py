@@ -38,13 +38,15 @@ class ComparisonMode(Enum):
     RELATIONSHIP = 1
     VALIDITY     = 2
 
+class ValidityResult(Enum):
+    VALID   = 1
+    INVALID = 2
+
 @dataclass
 class RelationshipResult:
     equivalent:    bool
     consistent:    bool
     contradictory: bool
-
-type ValidityResult = list[bool]
 
 # Exceptions
 class UnknownOperator(Exception):
@@ -165,7 +167,11 @@ class Logic:
                 )
 
             case ComparisonMode.VALIDITY:
-                raise NotImplementedError
+                for item in values:
+                    if all(item[:-1]) and not item[-1]:
+                        return ValidityResult.INVALID
+
+                return ValidityResult.VALID
 
 # CLI
 if __name__ == "__main__":
@@ -209,6 +215,15 @@ if __name__ == "__main__":
                 formatted_results += " and "
 
             print(f"\n\033[36mTheir relationship is {formatted_results}{'\033[32mconsistent\033[36m' if result.consistent else '\033[31minconsistent\033[36m'}.")
+            exit()
+
+        if "--validity" in options:
+            result = Logic(enable_logging = False).compare(
+                ComparisonMode.VALIDITY,
+                *expressions[0].split("//")[0].split("/"),
+                expressions[0].split("//")[-1]
+            ) == ValidityResult.VALID
+            print(f"\033[36mThe provided expression is \033[3{2 if result else 1}m{'valid' if result else 'invalid'}.\033[36m")
             exit()
 
         [run(expression) for expression in expressions]
