@@ -55,8 +55,8 @@
             new class {
                 constructor() {
                     this.init({
-                        premises: ["Q ⊃ (W • D)", "Q"],
-                        conclusion: "W"
+                        premises: ["A ⊃ B", "C ⊃ D", "(A ⊃ B) • (C ⊃ D)", "A ∨ C"],
+                        conclusion: "B ∨ D"
                     });
 
                     // Setup logic processor
@@ -90,25 +90,37 @@
                 }
 
                 parse_reason(reason) {
-                    const [ line1, line2, rule ] = reason.match(/^(\d+(?:\-\d+)?)[ ,]+(?:(\d+)[, ]+)?(\w+)$/).slice(1);
-                    const [ start, end ] = line1.includes("-") ? line1.split("-") : [line1, line2 ? line2 : line1];
+                    const match = (reason || "").match(/^(\d+(?:\-\d+)?)[ ,]+(?:(\d+)[, ]+)?(\w+)$/);
+                    if (!match) return [ null, null ];
+
+                    const [ line1, line2, rule ] = match.slice(1);
+                    if (!line1.includes("-")) return [ line2 ? [ line1, line2 ] : [ line1 ], rule ];
+
+                    const [ start, end ] = line1.includes("-");
                     return [ Array.from({ length: +end - +start + 1 }, (_, i) => +start + i), rule ];
                 }
 
                 push(line) {
                     const [ expression, reasoning ] = line.split(" / ");
                     const [ lines, rule ] = this.parse_reason(reasoning);
+                    if (!lines || !rule) {
+                        alert("You must provide a valid reasoning for a line.");
+                        return false;
+                    }
 
                     if (lines.length > 2) {
                         alert("This tool doesn't support conditional proofs yet.");
                         return false;
                     }
 
-                    // Confirm the move is correct
-                    const result = !this.logic.consistent(lines.map(line => this.lines[line]).concat(`~[${expression}]`));
-                    if (result) this.add_line(expression, reasoning);
-                    else console.error("invalid reasoning!");
-                    return result;
+                    const previous_lines = lines.map(line => this.lines[line]);
+
+                    // Confirm the technical logic is "correct"
+                    const result = !this.logic.consistent(previous_lines.concat(`~[${expression}]`));
+                    if (!result) return console.error("Truth table does not match!");
+
+                    // Check the rule is correct
+                    if (!this.logic.check_rule(previous_lines, rule, expression)) return console.error("Rule was not applied properly!");
                 }
 
                 init({ premises, conclusion }) {

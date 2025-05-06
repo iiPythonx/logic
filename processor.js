@@ -1,25 +1,35 @@
 // Copyright (c) 2025 iiPython
 // Rewrite of https://github.com/iiPythonx/logic using JS.
 
+const CONJUNCTION = ["⦁", "•", "∧", "^", "&"];
+const CONDITIONAL = ["⊃", "→", "⇒"];
+const EQUIVALANCE = ["≡", "↔", "⇔"];
+const DISJUNCTION = ["∨", "+", "∥"];
+
 const GROUPINGS = {"(": ")", "[": "]", "{": "}"};
 const OPERATORS = [
     {
-        "symbols": ["⦁", "•", "∧", "^", "&"],
+        "symbols": CONJUNCTION,
         "comparison": (x, y) => x && y
     },
     {
-        "symbols": ["⊃", "→", "⇒"],
+        "symbols": CONDITIONAL,
         "comparison": (x, y) => x ? y : true
     },
     {
-        "symbols": ["≡", "↔", "⇔"],
+        "symbols": EQUIVALANCE,
         "comparison": (x, y) => x === y
     },
     {
-        "symbols": ["∨", "+", "∥"],
+        "symbols": DISJUNCTION,
         "comparison": (x, y) => x || y
     },
 ];
+
+function same(a, b) {
+    if (a.length !== b.length) return false;
+    return a.every((val, index) => val === b[index]);
+}
 
 export class Logic {
     constructor() {
@@ -35,10 +45,8 @@ export class Logic {
         return GROUPINGS[expression[0]] ? expression.slice(1, expression.length - 1) : expression;
     }
 
-    evaluate(expression, variables, index) {
+    parse(expression) {
         let depth = 0, segments = [], buffer = "";
-
-        // Take expression, and find the top level assets
         for (const character of expression) {
             if (character === " ") continue;
             if (GROUPINGS[character]) {
@@ -58,6 +66,13 @@ export class Logic {
             } else { buffer += character; }
         }
         if (buffer) segments.push(buffer);
+        return segments;
+    }
+
+    evaluate(expression, variables, index) {
+
+        // Take expression, and find the top level assets
+        const segments = this.parse(expression);
 
         // Process chains
         if (segments.length > 1) {
@@ -113,5 +128,64 @@ export class Logic {
 
     consistent(expressions) {
         return this.find_possible_values(expressions).some(sublist => sublist.every(Boolean));
+    }
+
+    check_rule(lines, attempted_rule, conclusion) {
+        lines = lines.map(line => this.parse(line));
+        conclusion = this.parse(conclusion);
+        switch (attempted_rule.toUpperCase()) {
+            case "MP":    // Modus Ponens
+                return lines.length === 2 &&
+                        CONDITIONAL.includes(lines[0][1])                          &&
+                        this.trim(lines[0][0]) === this.trim(lines[1].join(""))    &&
+                        this.trim(lines[0][2]) === this.trim(conclusion.join(""));
+
+            case "MT":    // Modus Tollens
+                return lines.length === 2 &&
+                        CONDITIONAL.includes(lines[0][1])        &&
+                        lines[1].join("") === `~${lines[0][2]}`  &&
+                        `~${lines[0][0]}` === conclusion.join();
+
+            case "HS":    // Hypothetical Syllogism
+                return lines.length === 2 &&
+                        CONDITIONAL.includes(lines[0][1]) &&
+                        CONDITIONAL.includes(lines[1][1]) &&
+                        lines[0][2] === lines[1][0];
+
+            case "DS":    // Disjunctive Syllogism
+                return lines.length === 2 &&
+                        DISJUNCTION.includes(lines[0][1])     &&
+                        `~${lines[0][0]}` === lines[1].join() &&
+                        lines[0][2] === conclusion.join();
+
+            case "CD":    // Constructive Dillemma
+                const first = this.parse(this.trim(lines[0][0]));
+                const second = this.parse(this.trim(lines[0][2]));
+                return lines.length === 2 &&
+                        DISJUNCTION.includes(conclusion[1]) &&  // Ensure conclusion is a disjunct
+                        CONJUNCTION.includes(lines[0][1])   &&  // Ensure first line is a conjunct
+                        DISJUNCTION.includes(lines[1][1])   &&  // Ensure second line is a disjunct
+                        CONDITIONAL.includes(first[1])      &&  // Ensure first piece is a conditional
+                        CONDITIONAL.includes(second[1])     &&  // Ensure second piece is a conditional
+                        first[0]  === lines[1][0]           &&  // Ensure first piece matches disjunct
+                        second[0] === lines[1][2]           &&  // Ensure second piece matches disjunct
+                        first[2]  === conclusion[0]         &&  // Ensure first piece matches conclusion
+                        second[2] === conclusion[2]             // Ensure second piece matches conclusion
+
+            case "CONJ":  // Conjunction
+                return lines.length === 2 &&
+                    CONJUNCTION.includes(conclusion[1]) &&
+                    conclusion[0] === lines[0].join()   &&
+                    conclusion[2] === lines[1].join();
+
+            case "ADD":   // Addition
+                return lines.length === 1 &&
+                    DISJUNCTION.includes(conclusion[1]) &&
+                    conclusion[0] === lines[0].join();
+
+            default:
+                console.error("Unknown rule!");
+                return false;
+        }
     }
 };
