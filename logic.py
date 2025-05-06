@@ -31,7 +31,6 @@ for symbols, data in {
         OPERATORS[symbol] = data
 
 GROUPINGS = {"(": ")", "[": "]", "{": "}"}
-REGEX = re.compile(rf"((?:~+)?[A-Z]) ?([{''.join(OPERATORS.keys())}])? ?((?:~+)?[A-Z])?")
 
 # Enums
 class ComparisonMode(Enum):
@@ -160,6 +159,7 @@ class Logic:
         values = self.find_possible_values(*expressions)
         match mode:
             case ComparisonMode.RELATIONSHIP:
+                print(values)
                 consistent = any([x and y for x, y in values])
                 return RelationshipResult(
                     all([x == y for x, y in values]),

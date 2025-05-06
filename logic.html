@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang = "en">
+    <head>
+        <meta charset = "utf-8">
+
+        <!-- CSS -->
+        <style>
+            * {
+                color: #fff;
+                margin: 0px;
+                font-size: large;
+                font-family: monospace;
+            }
+            body, html {
+                background-color: #121212;
+                height: 100%;
+            }
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            main {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+            div.line {
+                gap: 130px;
+                display: flex;
+                justify-content: space-between;
+            }
+            input {
+                background: none;
+                outline: none;
+                font-family: monospace;
+                border: 1px solid #fff;
+                flex: 1;
+                padding: 4px 10px;
+                margin-top: 10px;
+            }
+        </style>
+
+        <title>Logic</title>
+    </head>
+    <body>
+        <main>
+            <input>
+        </main>
+
+        <!-- JS -->
+        <script type = "module">
+            import { Logic } from "./processor.js";
+
+            new class {
+                constructor() {
+                    this.init({
+                        premises: ["Q ⊃ (W • D)", "Q"],
+                        conclusion: "W"
+                    });
+
+                    // Setup logic processor
+                    this.logic = new Logic();
+
+                    // Handle input
+                    this.replacements = {
+                        ">": "⊃",
+                        "*": "•",
+                        "v": "∨"
+                    }
+                    document.querySelector("input").addEventListener("keydown", (e) => {
+                        if (e.key === "Enter") {
+                            if (this.push(e.target.value)) e.target.value = "";
+                            return;
+                        }
+                        if (!this.replacements[e.key]) return;
+
+                        const start = e.target.selectionStart;
+                        e.preventDefault();
+
+                        if (start > e.target.value.length - 1) {
+                            e.target.value += this.replacements[e.key];
+                            return;
+                        }
+
+                        const new_value = e.target.value.slice(0, start) + this.replacements[e.key] + e.target.value.slice(start);
+                        e.target.value = new_value;
+                        e.target.setSelectionRange(start + 1, start + 1);
+                    });
+                }
+
+                parse_reason(reason) {
+                    const [ line1, line2, rule ] = reason.match(/^(\d+(?:\-\d+)?)[ ,]+(?:(\d+)[, ]+)?(\w+)$/).slice(1);
+                    const [ start, end ] = line1.includes("-") ? line1.split("-") : [line1, line2 ? line2 : line1];
+                    return [ Array.from({ length: +end - +start + 1 }, (_, i) => +start + i), rule ];
+                }
+
+                push(line) {
+                    const [ expression, reasoning ] = line.split(" / ");
+                    const [ lines, rule ] = this.parse_reason(reasoning);
+
+                    if (lines.length > 2) {
+                        alert("This tool doesn't support conditional proofs yet.");
+                        return false;
+                    }
+
+                    // Confirm the move is correct
+                    const result = !this.logic.consistent(lines.map(line => this.lines[line]).concat(`~[${expression}]`));
+                    if (result) this.add_line(expression, reasoning);
+                    else console.error("invalid reasoning!");
+                    return result;
+                }
+
+                init({ premises, conclusion }) {
+                    this.lines = {};
+                    for (const premise of premises) this.add_line(premise, premise === premises.at(-1) ? "/ " + conclusion : "");
+                }
+
+                add_line(line, reason) {
+                    const line_number = Object.keys(this.lines).length + 1;
+                    this.lines[line_number] = line;
+
+                    const element = document.createElement("div");
+                    element.classList.add("line");
+                    element.innerHTML = `
+                        <span>${line_number}. ${line}</span>
+                        <span>${reason}</span>
+                    `;
+                    document.querySelector("main").insertBefore(element, document.querySelector("input"));
+                }
+            }
+        </script>
+    </body>
+</html>
