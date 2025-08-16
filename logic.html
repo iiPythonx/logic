@@ -24,6 +24,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 5px;
+                width: 500px;
             }
             div.line {
                 gap: 130px;
@@ -45,7 +46,7 @@
     </head>
     <body>
         <main>
-            <input>
+            <input placeholder = "Type START to stop premise loading.">
         </main>
 
         <!-- JS -->
@@ -54,10 +55,7 @@
 
             new class {
                 constructor() {
-                    this.init({
-                        premises: ["A ⊃ B", "C ⊃ D", "(A ⊃ B) • (C ⊃ D)", "A ∨ C"],
-                        conclusion: "B ∨ D"
-                    });
+                    this.lines = {};
 
                     // Setup logic processor
                     this.logic = new Logic();
@@ -104,6 +102,30 @@
                     const [ expression, reasoning ] = line.split(" / ");
                     const [ lines, rule ] = this.parse_reason(reasoning);
                     if (!lines || !rule) {
+
+                        // Handle starting
+                        if (!this.started) {
+                            if (expression === "START") {
+                                document.querySelector("input").placeholder = "";
+                                this.started = true;
+
+                                const length = Object.keys(this.lines).length;
+                                this.conclusion = this.lines[length];
+
+                                delete this.lines[length];
+
+                                const last_line = this.lines[length - 1];
+                                delete this.lines[length - 1];
+
+                                document.querySelector("div.line:last-of-type").remove();
+                                document.querySelector("div.line:last-of-type").remove();
+                                this.add_line(last_line, `/ ${this.conclusion}`);
+                                return true;
+                            }
+                            this.add_line(expression, "");
+                            return true;
+                        }
+
                         alert("You must provide a valid reasoning for a line.");
                         return false;
                     }
@@ -120,12 +142,17 @@
                     if (!result) return console.error("Truth table does not match!");
 
                     // Check the rule is correct
-                    if (!this.logic.check_rule(previous_lines, rule, expression)) return console.error("Rule was not applied properly!");
-                }
+                    if (!this.logic.check_rule(previous_lines, rule, expression)) {
+                        previous_lines.reverse();
+                        if (!this.logic.check_rule(previous_lines, rule, expression)) return console.error("Rule was not applied properly!");
+                    }
 
-                init({ premises, conclusion }) {
-                    this.lines = {};
-                    for (const premise of premises) this.add_line(premise, premise === premises.at(-1) ? "/ " + conclusion : "");
+                    this.add_line(expression, reasoning);
+                    if (this.logic.parse(expression).join("") === this.logic.parse(this.conclusion).join("")) {
+                        this.add_line("QED", "");
+                        document.querySelector("input").remove();
+                    };
+                    return true;
                 }
 
                 add_line(line, reason) {

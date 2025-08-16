@@ -26,11 +26,6 @@ const OPERATORS = [
     },
 ];
 
-function same(a, b) {
-    if (a.length !== b.length) return false;
-    return a.every((val, index) => val === b[index]);
-}
-
 export class Logic {
     constructor() {
         this.operators = {};
@@ -144,7 +139,7 @@ export class Logic {
                 return lines.length === 2 &&
                         CONDITIONAL.includes(lines[0][1])        &&
                         lines[1].join("") === `~${lines[0][2]}`  &&
-                        `~${lines[0][0]}` === conclusion.join();
+                        `~${lines[0][0]}` === conclusion.join("");
 
             case "HS":    // Hypothetical Syllogism
                 return lines.length === 2 &&
@@ -155,8 +150,8 @@ export class Logic {
             case "DS":    // Disjunctive Syllogism
                 return lines.length === 2 &&
                         DISJUNCTION.includes(lines[0][1])     &&
-                        `~${lines[0][0]}` === lines[1].join() &&
-                        lines[0][2] === conclusion.join();
+                        `~${lines[0][0]}` === lines[1].join("") &&
+                        lines[0][2] === conclusion.join("");
 
             case "CD":    // Constructive Dillemma
                 const first = this.parse(this.trim(lines[0][0]));
@@ -174,18 +169,26 @@ export class Logic {
 
             case "CONJ":  // Conjunction
                 return lines.length === 2 &&
-                    CONJUNCTION.includes(conclusion[1]) &&
-                    conclusion[0] === lines[0].join()   &&
-                    conclusion[2] === lines[1].join();
+                        CONJUNCTION.includes(conclusion[1])             &&
+                        this.trim(conclusion[0]) === lines[0].join("")  &&
+                        this.trim(conclusion[2]) === lines[1].join("");
 
             case "ADD":   // Addition
                 return lines.length === 1 &&
                     DISJUNCTION.includes(conclusion[1]) &&
-                    conclusion[0] === lines[0].join();
+                    conclusion[0] === lines[0].join("");
+
+            case "SIMP":  // Simplification
+                return lines.length === 1 &&
+                    CONJUNCTION.includes(lines[0][1]) &&
+                    this.trim(conclusion.join()) === this.trim(lines[0][0]);
 
             default:
-                console.error("Unknown rule!");
-                return false;
+                if (!this.alerted) {
+                    alert("This tool allows you to use rules of replacement with no rule validation. It's up to you to make sure your rule is OK. This notice will not be shown again.");
+                    this.alerted = true;
+                }
+                return true;
         }
     }
 };
